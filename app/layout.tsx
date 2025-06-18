@@ -65,7 +65,7 @@ export const metadata: Metadata = {
     title: "Controle de Logística - Branco Peres",
     description: "Sistema de Controle de Logística para Frotas, Tanques e Dollys",
   },
-    generator: 'v0.dev'
+  generator: "v0.dev",
 }
 
 export const viewport: Viewport = {
@@ -101,17 +101,17 @@ export default function RootLayout({
         <meta name="msapplication-tap-highlight" content="no" />
 
         {/* Favicons */}
-        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-        <link rel="apple-touch-icon" sizes="152x152" href="/apple-touch-icon.png" />
-        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
-        <link rel="apple-touch-icon" sizes="167x167" href="/apple-touch-icon.png" />
-        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
-        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+        <link rel="apple-touch-icon" href="/custom-icon.png" />
+        <link rel="apple-touch-icon" sizes="152x152" href="/custom-icon.png" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/custom-icon.png" />
+        <link rel="apple-touch-icon" sizes="167x167" href="/custom-icon.png" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/custom-icon.png" />
+        <link rel="icon" type="image/png" sizes="16x16" href="/custom-icon.png" />
         <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#059669" />
-        <link rel="shortcut icon" href="/favicon.ico" />
+        <link rel="shortcut icon" href="/custom-icon.png" />
 
         {/* Microsoft */}
-        <meta name="msapplication-TileImage" content="/ms-icon-144x144.png" />
+        <meta name="msapplication-TileImage" content="/custom-icon.png" />
       </head>
       <body className={inter.className}>{children}</body>
     </html>
