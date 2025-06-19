@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { Truck, WifiOff, Plus, AlertTriangle, Container, Menu, X, Activity, Zap } from "lucide-react"
 import { ConnectionStatus } from "@/components/connection-status"
 import { PWAInstallPrompt } from "@/components/pwa-install-prompt"
+import { RealtimeIndicator } from "@/components/realtime-indicator"
 import { EquipamentosCadastrados } from "@/components/tabs/equipamentos-cadastrados"
 import { NovoEquipamento } from "@/components/tabs/novo-equipamento"
 import { TanquesDisponiveis } from "@/components/tabs/tanques-disponiveis"
@@ -170,12 +171,15 @@ export default function LogisticsControl() {
 
                 {/* Status de Conexão */}
                 <div
-                  className={`mt-8 flex justify-center transform transition-all duration-1000 delay-500 ${
+                  className={`mt-8 flex justify-center gap-4 transform transition-all duration-1000 delay-500 ${
                     isLoaded ? "translate-y-0 opacity-100" : "translate-y-10 opacity-0"
                   }`}
                 >
                   <div className="bg-white/10 backdrop-blur-md px-6 py-3 rounded-full border border-white/20 shadow-xl">
                     <ConnectionStatus />
+                  </div>
+                  <div className="bg-white/10 backdrop-blur-md px-6 py-3 rounded-full border border-white/20 shadow-xl">
+                    <RealtimeIndicator />
                   </div>
                 </div>
               </div>
@@ -197,7 +201,7 @@ export default function LogisticsControl() {
       </div>
 
       {/* Aviso sobre modo offline */}
-      {!navigator.onLine && (
+      {typeof window !== "undefined" && !navigator.onLine && (
         <div className="bg-gradient-to-r from-amber-400 to-orange-500 border-b border-orange-600 text-white px-4 py-4 shadow-lg">
           <div className="max-w-7xl mx-auto flex items-center gap-3">
             <WifiOff className="h-6 w-6 animate-pulse" />

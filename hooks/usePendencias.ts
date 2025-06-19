@@ -175,6 +175,33 @@ export function usePendencias() {
     fetchPendencias()
   }, [isOnline])
 
+  // Adicionar listener para mudanças em tempo real
+  useEffect(() => {
+    const handleRealtimeUpdate = (event: CustomEvent) => {
+      const payload = event.detail
+
+      if (payload.eventType === "INSERT" && payload.new) {
+        setPendencias((prev) => {
+          const exists = prev.find((p) => p.id === payload.new.id)
+          if (!exists) {
+            return [payload.new, ...prev]
+          }
+          return prev
+        })
+      } else if (payload.eventType === "UPDATE" && payload.new) {
+        setPendencias((prev) => prev.map((p) => (p.id === payload.new.id ? payload.new : p)))
+      } else if (payload.eventType === "DELETE" && payload.old) {
+        setPendencias((prev) => prev.filter((p) => p.id !== payload.old.id))
+      }
+    }
+
+    window.addEventListener("pendencias_updated", handleRealtimeUpdate as EventListener)
+
+    return () => {
+      window.removeEventListener("pendencias_updated", handleRealtimeUpdate as EventListener)
+    }
+  }, [])
+
   return {
     pendencias,
     loading,

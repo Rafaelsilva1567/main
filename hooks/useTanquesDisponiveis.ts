@@ -194,6 +194,33 @@ export function useTanquesDisponiveis() {
     fetchTanques()
   }, [isOnline])
 
+  // Adicionar listener para mudanças em tempo real
+  useEffect(() => {
+    const handleRealtimeUpdate = (event: CustomEvent) => {
+      const payload = event.detail
+
+      if (payload.eventType === "INSERT" && payload.new) {
+        setTanques((prev) => {
+          const exists = prev.find((t) => t.id === payload.new.id)
+          if (!exists) {
+            return [...prev, payload.new].sort((a, b) => a.numero_tanque - b.numero_tanque)
+          }
+          return prev
+        })
+      } else if (payload.eventType === "UPDATE" && payload.new) {
+        setTanques((prev) => prev.map((t) => (t.id === payload.new.id ? payload.new : t)))
+      } else if (payload.eventType === "DELETE" && payload.old) {
+        setTanques((prev) => prev.filter((t) => t.id !== payload.old.id))
+      }
+    }
+
+    window.addEventListener("tanques_updated", handleRealtimeUpdate as EventListener)
+
+    return () => {
+      window.removeEventListener("tanques_updated", handleRealtimeUpdate as EventListener)
+    }
+  }, [])
+
   return {
     tanques,
     loading,

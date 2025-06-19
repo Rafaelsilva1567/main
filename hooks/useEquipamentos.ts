@@ -73,9 +73,9 @@ export function useEquipamentos() {
           // Preparar dados para inserção (converter dolly null para null explicitamente)
           const dataToInsert = {
             ...equipamento,
-            dolly: equipamento.dolly || null
+            dolly: equipamento.dolly || null,
           }
-          
+
           const { data, error } = await supabase.from("equipamentos_logistica").insert([dataToInsert]).select()
           if (error) throw error
 
@@ -174,6 +174,33 @@ export function useEquipamentos() {
   useEffect(() => {
     fetchEquipamentos()
   }, [isOnline])
+
+  // Adicionar listener para mudanças em tempo real
+  useEffect(() => {
+    const handleRealtimeUpdate = (event: CustomEvent) => {
+      const payload = event.detail
+
+      if (payload.eventType === "INSERT" && payload.new) {
+        setEquipamentos((prev) => {
+          const exists = prev.find((eq) => eq.id === payload.new.id)
+          if (!exists) {
+            return [payload.new, ...prev]
+          }
+          return prev
+        })
+      } else if (payload.eventType === "UPDATE" && payload.new) {
+        setEquipamentos((prev) => prev.map((eq) => (eq.id === payload.new.id ? payload.new : eq)))
+      } else if (payload.eventType === "DELETE" && payload.old) {
+        setEquipamentos((prev) => prev.filter((eq) => eq.id !== payload.old.id))
+      }
+    }
+
+    window.addEventListener("equipamentos_updated", handleRealtimeUpdate as EventListener)
+
+    return () => {
+      window.removeEventListener("equipamentos_updated", handleRealtimeUpdate as EventListener)
+    }
+  }, [])
 
   return {
     equipamentos,

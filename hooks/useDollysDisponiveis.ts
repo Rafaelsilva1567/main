@@ -145,6 +145,33 @@ export function useDollysDisponiveis() {
     fetchDollys()
   }, [isOnline])
 
+  // Adicionar listener para mudanças em tempo real
+  useEffect(() => {
+    const handleRealtimeUpdate = (event: CustomEvent) => {
+      const payload = event.detail
+
+      if (payload.eventType === "INSERT" && payload.new) {
+        setDollys((prev) => {
+          const exists = prev.find((d) => d.id === payload.new.id)
+          if (!exists) {
+            return [...prev, payload.new].sort((a, b) => a.numero_dolly - b.numero_dolly)
+          }
+          return prev
+        })
+      } else if (payload.eventType === "UPDATE" && payload.new) {
+        setDollys((prev) => prev.map((d) => (d.id === payload.new.id ? payload.new : d)))
+      } else if (payload.eventType === "DELETE" && payload.old) {
+        setDollys((prev) => prev.filter((d) => d.id !== payload.old.id))
+      }
+    }
+
+    window.addEventListener("dollys_updated", handleRealtimeUpdate as EventListener)
+
+    return () => {
+      window.removeEventListener("dollys_updated", handleRealtimeUpdate as EventListener)
+    }
+  }, [])
+
   return {
     dollys,
     loading,
