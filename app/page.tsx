@@ -11,6 +11,7 @@ import { TanquesDisponiveis } from "@/components/tabs/tanques-disponiveis"
 import { DollysDisponiveis } from "@/components/tabs/dollys-disponiveis"
 import { Pendencias } from "@/components/tabs/pendencias"
 import Image from "next/image"
+import { ErrorBoundary } from "@/components/error-boundary"
 
 type TabType = "equipamentos" | "novo" | "tanques" | "dollys" | "pendencias"
 
@@ -201,7 +202,7 @@ export default function LogisticsControl() {
       </div>
 
       {/* Aviso sobre modo offline */}
-      {typeof window !== "undefined" && !navigator.onLine && (
+      {typeof window !== "undefined" && typeof navigator !== "undefined" && !navigator.onLine && (
         <div className="bg-gradient-to-r from-amber-400 to-orange-500 border-b border-orange-600 text-white px-4 py-4 shadow-lg">
           <div className="max-w-7xl mx-auto flex items-center gap-3">
             <WifiOff className="h-6 w-6 animate-pulse" />
@@ -307,11 +308,13 @@ export default function LogisticsControl() {
             isLoaded ? "translate-y-0 opacity-100" : "translate-y-10 opacity-0"
           }`}
         >
-          <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-2xl border border-white/50 overflow-hidden">
-            <div className="p-6 lg:p-8">
-              <ActiveComponent />
+          <ErrorBoundary>
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-2xl border border-white/50 overflow-hidden">
+              <div className="p-6 lg:p-8">
+                <ActiveComponent />
+              </div>
             </div>
-          </div>
+          </ErrorBoundary>
         </div>
       </div>
 
