@@ -10,7 +10,6 @@ import { NovoEquipamento } from "@/components/tabs/novo-equipamento"
 import { TanquesDisponiveis } from "@/components/tabs/tanques-disponiveis"
 import { DollysDisponiveis } from "@/components/tabs/dollys-disponiveis"
 import { Pendencias } from "@/components/tabs/pendencias"
-import Image from "next/image"
 import { ErrorBoundary } from "@/components/error-boundary"
 
 type TabType = "equipamentos" | "novo" | "tanques" | "dollys" | "pendencias"
@@ -93,13 +92,6 @@ export default function LogisticsControl() {
         <div className="absolute inset-0 bg-gradient-to-r from-emerald-600 via-blue-600 to-emerald-700">
           <div className="absolute inset-0 opacity-10">
             <div className="absolute inset-0 bg-white/5 animate-pulse"></div>
-            <div
-              className="absolute inset-0 animate-pulse"
-              style={{
-                backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fillRule='evenodd'%3E%3Cg fill='%23ffffff' fillOpacity='0.05'%3E%3Ccircle cx='30' cy='30' r='4'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-                backgroundSize: "60px 60px",
-              }}
-            ></div>
           </div>
         </div>
 
@@ -118,13 +110,9 @@ export default function LogisticsControl() {
                   <div className="relative group">
                     <div className="absolute -inset-2 bg-white/20 rounded-xl blur-lg group-hover:blur-xl transition-all duration-300"></div>
                     <div className="relative bg-white/90 backdrop-blur-sm p-3 rounded-xl shadow-2xl transform group-hover:scale-105 transition-all duration-300">
-                      <Image
-                        src="/logo.png"
-                        alt="Branco Peres Agribusiness"
-                        width={140}
-                        height={50}
-                        className="h-12 w-auto filter drop-shadow-lg"
-                      />
+                      <div className="h-12 w-32 bg-emerald-600 rounded flex items-center justify-center text-white font-bold text-sm">
+                        BRANCO PERES
+                      </div>
                     </div>
                   </div>
 
