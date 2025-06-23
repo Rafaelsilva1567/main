@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { supabase } from "@/lib/supabase"
-import { ErrorHandler } from "@/lib/error-handler"
 
 type PendingOperation = {
   id: string
@@ -12,159 +11,167 @@ type PendingOperation = {
   timestamp: number
 }
 
-/**
- * Hook responsável por:
- * 1. Detectar estado online/offline
- * 2. Enfileirar operações quando offline
- * 3. Sincronizar automaticamente quando a conexão volta
- * 4. Cachear dados (saveToCache / loadFromCache)
- */
 export function useOfflineSync() {
-  const [isOnline, setIsOnline] = useState<boolean>(typeof navigator !== "undefined" ? navigator.onLine : true)
+  const [isOnline, setIsOnline] = useState(true)
   const [pendingOperations, setPendingOperations] = useState<PendingOperation[]>([])
   const [isSyncing, setIsSyncing] = useState(false)
   const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null)
 
-  /* ----------------------------------------
-   * 1. MONITORAR CONEXÃO
-   * ------------------------------------- */
+  // Verificar status da conexão
   useEffect(() => {
-    const goOnline = () => setIsOnline(true)
-    const goOffline = () => setIsOnline(false)
+    const updateOnlineStatus = () => {
+      setIsOnline(navigator.onLine)
+    }
 
-    window.addEventListener("online", goOnline)
-    window.addEventListener("offline", goOffline)
+    window.addEventListener("online", updateOnlineStatus)
+    window.addEventListener("offline", updateOnlineStatus)
 
-    // Restaurar fila e timestamp do localStorage
-    try {
-      const saved = localStorage.getItem("pendingOperations")
-      if (saved) setPendingOperations(JSON.parse(saved))
-      const last = localStorage.getItem("lastSyncTime")
-      if (last) setLastSyncTime(new Date(last))
-    } catch (err) {
-      ErrorHandler.logError(err as Error, "useOfflineSync — loadStorage")
+    // Carregar operações pendentes do localStorage
+    const savedOperations = localStorage.getItem("pendingOperations")
+    if (savedOperations) {
+      setPendingOperations(JSON.parse(savedOperations))
+    }
+
+    const lastSync = localStorage.getItem("lastSyncTime")
+    if (lastSync) {
+      setLastSyncTime(new Date(lastSync))
     }
 
     return () => {
-      window.removeEventListener("online", goOnline)
-      window.removeEventListener("offline", goOffline)
+      window.removeEventListener("online", updateOnlineStatus)
+      window.removeEventListener("offline", updateOnlineStatus)
     }
   }, [])
 
-  /* ----------------------------------------
-   * 2. PERSISTIR FILA NO LOCALSTORAGE
-   * ------------------------------------- */
+  // Salvar operações pendentes no localStorage
   useEffect(() => {
-    try {
-      localStorage.setItem("pendingOperations", JSON.stringify(pendingOperations))
-    } catch (err) {
-      ErrorHandler.logError(err as Error, "useOfflineSync — saveStorage")
-    }
+    localStorage.setItem("pendingOperations", JSON.stringify(pendingOperations))
   }, [pendingOperations])
 
-  /* ----------------------------------------
-   * 3. ADICIONAR À FILA
-   * ------------------------------------- */
+  // Adicionar operação à fila
   const addPendingOperation = useCallback(
     (type: PendingOperation["type"], table: PendingOperation["table"], data: any) => {
-      const op: PendingOperation = {
+      const operation: PendingOperation = {
         id: crypto.randomUUID(),
         type,
         table,
         data,
         timestamp: Date.now(),
       }
-      setPendingOperations((prev) => [...prev, op])
-      console.log(`📝 Operação OFFLINE adicionada (${type} em ${table})`, data)
+      setPendingOperations((prev) => [...prev, operation])
+      console.log(`📝 Operação ${type} adicionada à fila offline para ${table}:`, data)
     },
     [],
   )
 
-  /* ----------------------------------------
-   * 4. SINCRONIZAÇÃO
-   * ------------------------------------- */
+  // Sincronizar operações pendentes
   const syncPendingOperations = useCallback(async () => {
-    if (!isOnline || isSyncing || pendingOperations.length === 0) return
+    if (!isOnline || pendingOperations.length === 0 || isSyncing) return
 
-    console.log(`🔄 Sincronizando ${pendingOperations.length} operação(ões)…`)
+    console.log(`🔄 Iniciando sincronização de ${pendingOperations.length} operações...`)
     setIsSyncing(true)
-
-    const okIds: string[] = []
+    const successfulOperations: string[] = []
+    const errors: string[] = []
 
     try {
-      for (const op of pendingOperations) {
+      for (const operation of pendingOperations) {
         try {
-          switch (op.type) {
-            case "create": {
-              const { error } = await supabase.from(op.table).insert([op.data])
-              if (error) throw error
+          console.log(`🔄 Sincronizando ${operation.type} em ${operation.table}:`, operation.data)
+
+          switch (operation.type) {
+            case "create":
+              const { error: createError } = await supabase.from(operation.table).insert([operation.data])
+              if (createError) throw createError
               break
-            }
-            case "update": {
-              const { error } = await supabase.from(op.table).update(op.data.updates).eq("id", op.data.id)
-              if (error) throw error
+
+            case "update":
+              const { error: updateError } = await supabase
+                .from(operation.table)
+                .update(operation.data.updates)
+                .eq("id", operation.data.id)
+              if (updateError) throw updateError
               break
-            }
-            case "delete": {
-              const { error } = await supabase.from(op.table).delete().eq("id", op.data.id)
-              if (error) throw error
+
+            case "delete":
+              const { error: deleteError } = await supabase.from(operation.table).delete().eq("id", operation.data.id)
+              if (deleteError) throw deleteError
               break
-            }
           }
-          okIds.push(op.id)
-        } catch (err) {
-          ErrorHandler.logError(err as Error, `Sync-${op.table}`)
-          // mantém na fila para próxima tentativa
+
+          successfulOperations.push(operation.id)
+          console.log(`✅ Operação ${operation.id} sincronizada com sucesso`)
+        } catch (error) {
+          console.error(`❌ Erro ao sincronizar operação ${operation.id}:`, error)
+          errors.push(
+            `${operation.type} em ${operation.table}: ${error instanceof Error ? error.message : "Erro desconhecido"}`,
+          )
         }
       }
-    } finally {
-      // remover bem-sucedidos
-      if (okIds.length) {
-        setPendingOperations((prev) => prev.filter((o) => !okIds.includes(o.id)))
-      }
+
+      // Remover operações bem-sucedidas
+      setPendingOperations((prev) => prev.filter((op) => !successfulOperations.includes(op.id)))
+
+      // Atualizar tempo da última sincronização
       const now = new Date()
       setLastSyncTime(now)
       localStorage.setItem("lastSyncTime", now.toISOString())
+
+      console.log(`🎉 Sincronização concluída: ${successfulOperations.length} sucessos, ${errors.length} erros`)
+    } finally {
       setIsSyncing(false)
     }
-  }, [isOnline, isSyncing, pendingOperations])
 
-  /* ----------------------------------------
-   * 5. AUTO-SYNC AO VOLTAR ONLINE
-   * ------------------------------------- */
-  useEffect(() => {
-    if (isOnline && pendingOperations.length) {
-      const t = setTimeout(() => syncPendingOperations(), 1500)
-      return () => clearTimeout(t)
+    return {
+      successful: successfulOperations.length,
+      errors: errors.length,
+      errorMessages: errors,
     }
-  }, [isOnline, pendingOperations, syncPendingOperations])
+  }, [isOnline, pendingOperations, isSyncing])
 
-  /* ----------------------------------------
-   * 6. CACHE UTIL
-   * ------------------------------------- */
-  const saveToCache = useCallback((key: string, data: unknown) => {
+  // Sincronizar automaticamente quando ficar online
+  useEffect(() => {
+    if (isOnline && pendingOperations.length > 0) {
+      const timer = setTimeout(() => {
+        console.log("🌐 Conexão restaurada! Iniciando sincronização automática...")
+        syncPendingOperations()
+      }, 2000) // Aguarda 2 segundos após ficar online
+
+      return () => clearTimeout(timer)
+    }
+  }, [isOnline, pendingOperations.length, syncPendingOperations])
+
+  // Função para salvar dados no cache local
+  const saveToCache = useCallback((key: string, data: any) => {
     try {
-      localStorage.setItem(`cache_${key}`, JSON.stringify({ data, timestamp: Date.now() }))
-    } catch (err) {
-      ErrorHandler.logError(err as Error, "saveToCache")
+      localStorage.setItem(
+        `cache_${key}`,
+        JSON.stringify({
+          data,
+          timestamp: Date.now(),
+        }),
+      )
+    } catch (error) {
+      console.error("Erro ao salvar no cache:", error)
     }
   }, [])
 
+  // Função para carregar dados do cache local
   const loadFromCache = useCallback((key: string) => {
     try {
       const cached = localStorage.getItem(`cache_${key}`)
-      if (!cached) return null
-      const { data, timestamp } = JSON.parse(cached)
-      // 24 h de validade
-      if (Date.now() - timestamp < 86_400_000) return data
-      return null
-    } catch (err) {
-      ErrorHandler.logError(err as Error, "loadFromCache")
-      return null
+      if (cached) {
+        const { data, timestamp } = JSON.parse(cached)
+        // Cache válido por 24 horas
+        if (Date.now() - timestamp < 24 * 60 * 60 * 1000) {
+          return data
+        }
+      }
+    } catch (error) {
+      console.error("Erro ao carregar do cache:", error)
     }
+    return null
   }, [])
 
-  /* --------- API --------- */
   return {
     isOnline,
     pendingOperations,
@@ -176,6 +183,3 @@ export function useOfflineSync() {
     loadFromCache,
   }
 }
-
-/* Export default opcional para quem importa dessa forma */
-export default useOfflineSync

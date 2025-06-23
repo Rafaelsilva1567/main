@@ -10,7 +10,7 @@ import { NovoEquipamento } from "@/components/tabs/novo-equipamento"
 import { TanquesDisponiveis } from "@/components/tabs/tanques-disponiveis"
 import { DollysDisponiveis } from "@/components/tabs/dollys-disponiveis"
 import { Pendencias } from "@/components/tabs/pendencias"
-import { ErrorBoundary } from "@/components/error-boundary"
+import Image from "next/image"
 
 type TabType = "equipamentos" | "novo" | "tanques" | "dollys" | "pendencias"
 
@@ -92,6 +92,13 @@ export default function LogisticsControl() {
         <div className="absolute inset-0 bg-gradient-to-r from-emerald-600 via-blue-600 to-emerald-700">
           <div className="absolute inset-0 opacity-10">
             <div className="absolute inset-0 bg-white/5 animate-pulse"></div>
+            <div
+              className="absolute inset-0 animate-pulse"
+              style={{
+                backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fillRule='evenodd'%3E%3Cg fill='%23ffffff' fillOpacity='0.05'%3E%3Ccircle cx='30' cy='30' r='4'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+                backgroundSize: "60px 60px",
+              }}
+            ></div>
           </div>
         </div>
 
@@ -110,9 +117,13 @@ export default function LogisticsControl() {
                   <div className="relative group">
                     <div className="absolute -inset-2 bg-white/20 rounded-xl blur-lg group-hover:blur-xl transition-all duration-300"></div>
                     <div className="relative bg-white/90 backdrop-blur-sm p-3 rounded-xl shadow-2xl transform group-hover:scale-105 transition-all duration-300">
-                      <div className="h-12 w-32 bg-emerald-600 rounded flex items-center justify-center text-white font-bold text-sm">
-                        BRANCO PERES
-                      </div>
+                      <Image
+                        src="/logo.png"
+                        alt="Branco Peres Agribusiness"
+                        width={140}
+                        height={50}
+                        className="h-12 w-auto filter drop-shadow-lg"
+                      />
                     </div>
                   </div>
 
@@ -190,7 +201,7 @@ export default function LogisticsControl() {
       </div>
 
       {/* Aviso sobre modo offline */}
-      {typeof window !== "undefined" && typeof navigator !== "undefined" && !navigator.onLine && (
+      {typeof window !== "undefined" && !navigator.onLine && (
         <div className="bg-gradient-to-r from-amber-400 to-orange-500 border-b border-orange-600 text-white px-4 py-4 shadow-lg">
           <div className="max-w-7xl mx-auto flex items-center gap-3">
             <WifiOff className="h-6 w-6 animate-pulse" />
@@ -296,13 +307,11 @@ export default function LogisticsControl() {
             isLoaded ? "translate-y-0 opacity-100" : "translate-y-10 opacity-0"
           }`}
         >
-          <ErrorBoundary>
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-2xl border border-white/50 overflow-hidden">
-              <div className="p-6 lg:p-8">
-                <ActiveComponent />
-              </div>
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-2xl border border-white/50 overflow-hidden">
+            <div className="p-6 lg:p-8">
+              <ActiveComponent />
             </div>
-          </ErrorBoundary>
+          </div>
         </div>
       </div>
 
